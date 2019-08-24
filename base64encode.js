@@ -2,7 +2,7 @@
  * 	文件标示开头
  *  little endian：从右到左填充
  *  big endian：从左到右填充
- * 
+ *
  *	EF BB BF　　　 UTF-8
 	FE FF　　　　　UTF-16/UCS-2, little endian
 	FF FE　　　　　UTF-16/UCS-2, big endian
@@ -13,28 +13,28 @@
 	而utf8编码则是可变字节，当编码范围是0x00-0xff时，utf8是1个字节，如下面的对应关系
  *
  *
- * 
+ *
 * UTF16和UTF8转换对照表
 * 范围：0000 0000 0000 0000 ~ 0000 0000 0111 1111，有效位7位
 * U+00000000 – U+0000007F 	0xxxxxxx 1字节
 *
-* 
+*
 * 范围：0000 0000 1000 0000 ~ 0000 0111 1111 1111，
 * 即把数字看成：0000 0xxx xxxx xxxx,有效位：xxx xxxx xxxx有效位是11位，刚好对应下面的11个x，
 * 前5个填入110xxxxx,后6个填入10xxxxxx
 * U+00000080 – U+000007FF 	110xxxxx 10xxxxxx 2字节
 *
-* 
-* 
+*
+*
 * 范围：0000 1000 0000 0000 ~ 1111 1111 1111 1111，
 * 把数字看成是： xxxx xxxx xxxx xxxx，有效位是16位，刚好对应下面的16个x，
 * 前4个填入1110xxxx位，前4~10位(6个字符)填入10xxxxxx位，其余填入后面的10xxxxxx位，依次类推. utf16终结
 * U+00000800 – U+0000FFFF 	1110xxxx 10xxxxxx 10xxxxxx 3字节，有效位16位, 是utf16终结
-* 
+*
 * U+00010000 – U+001FFFFF 	11110xxx 10xxxxxx 10xxxxxx 10xxxxxx 4字节，有效位是21位，utf32开始
-* 
+*
 * U+00200000 – U+03FFFFFF 	111110xx 10xxxxxx 10xxxxxx 10xxxxxx 10xxxxxx 5字节，有效位26位
-* 
+*
 * U+04000000 – U+7FFFFFFF 	1111110x 10xxxxxx 10xxxxxx 10xxxxxx 10xxxxxx 10xxxxxx 6字节，有效位31位
 */
 
@@ -73,7 +73,7 @@ class MBase64 {
 				// -> 0000 0000 10kl mnop
 				var byte2 = 0x80 | (code & 0x3F);
 				res.push(
-					String.fromCharCode(byte1), 
+					String.fromCharCode(byte1),
 					String.fromCharCode(byte2)
 				);
 			} else if (code >= 0x0800 && code <= 0xFFFF) {
@@ -86,8 +86,8 @@ class MBase64 {
 				// 10xxxxxx
 				var byte3 = 0x80 | (code & 0x3F);
 				res.push(
-					String.fromCharCode(byte1), 
-					String.fromCharCode(byte2), 
+					String.fromCharCode(byte1),
+					String.fromCharCode(byte2),
 					String.fromCharCode(byte3)
 				);
 			} else if (code >= 0x00010000 && code <= 0x001FFFFF) {
@@ -231,11 +231,3 @@ class MBase64 {
 		return this.UTF8ToUTF16(res.join(''));
 	}
 };
-
-var base64 = new MBase64();
-
-var encodeStr = base64.encode('你');
-
-var decodeStr = base64.decode(encodeStr);
-
-console.log(encodeStr, decodeStr);

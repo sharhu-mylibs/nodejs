@@ -1,0 +1,93 @@
+gulp自动化构建：
+
+一、需要nodejs环境：
+	http://nodejs.org  下载安装相关的版本，如果不是使用node做服务器可以选择最新版本，毕竟es6特性支持
+二、npm安装gulp： npm install -g gulp
+三、在工程目录建立gulp自动化构建文件：gulpfile.js
+四、官方地址：https://www.npmjs.com/package/gulp
+五、一个简单的完整例子（gulpfile.js文件内容）：
+
+var gulp = require('gulp'); //这是gulp的主要变量
+var gulpChange = require('gulp-changed');//其他以gulp-XXX形式的都是gulp的插件，官方建议开头为gulp
+var less = require('gulp-less');//作为一个非常流行的css处理插件，跟sass一样，非常方便
+var path = require('path');
+var LessPluginAutoPrefix = require('less-plugin-autoprefix');//一些其他插件的依赖
+var autoprefix= new LessPluginAutoPrefix({ browsers: ["last 2 versions"] });
+var del =  require('del');
+var uglify = require('gulp-uglify');//常用的js压缩插件
+var cssmin = require('gulp-cssmin');//常用的css压缩插件
+var rename = require('gulp-rename');//常用的重命名插件
+
+
+var dist = 'dist1';
+var distCss = 'dist1/css';
+console.log(distCss);
+var distJs = 'dist1/js';
+
+
+//student-start
+var studentTemp = path.resolve(__dirname, '../../teacher_server/src/main/resources/template');
+var studentJs = path.resolve(__dirname, '../../teacher_server/src/main/webapp/student/js');
+var studentCss = path.resolve(__dirname, '../../teacher_server/src/main/webapp/student/css');
+var studentPic = path.resolve(__dirname, '../../teacher_server/src/main/webapp/student/pic');
+var studentDist = path.resolve(__dirname, '../../teacher_server/src/main/webapp/student');
+
+console.log(studentTemp, studentJs, studentCss)
+//gulp的任务是以这样的形式定义的，gulp.task(name, fn);
+gulp.task('student-ftl', function () {
+  		//这里需要注意的是gulp提供了一些blob（详细参考gulp的文档说明）链式接口，
+  		//gulp.src作为源文件入口，他会将该函数中参数（可以是string或者array）的路径下的所以文件以文件流的形式读取，
+  		//并传递给pipe(详细参考nodejs中对应的stream操作)函数后面的任意插件，
+  		//以便进行后续的处理，而dest函数就是目的地函数，经过处理的文件都会被复制到dest函数中指定的地址（可以是string或者array）
+  return gulp.src('./client/template/**/*.ftl')
+    .pipe(gulpChange(studentTemp))
+    .pipe(gulp.dest(studentTemp));
+})
+gulp.task('student-less', function () {
+  return gulp.src('./client/less/**/*.less')
+    .pipe(less({
+      paths: [ path.join(__dirname, 'client/less', 'includes') ],
+      plugins: [autoprefix]
+    }))
+    .pipe(cssmin())
+	.pipe(rename({suffix: '.min'}))
+    .pipe(gulp.dest(studentCss));
+})
+
+gulp.task('student-js', function () {
+  return gulp.src('./client/js/**/*.js')
+    .pipe(gulpChange(studentJs))
+    .pipe(gulp.dest(studentJs));
+})
+
+gulp.task('student-pic', function () {
+  return gulp.src('client/pic/**/*')
+    .pipe(gulpChange(studentPic))
+    .pipe(gulp.dest(studentPic));
+})
+gulp.task('moveNotLessStudent', function (argument) {
+    return gulp.src(['client/**/*','!client/**/*.less'])
+          .pipe(gulpChange(studentDist))
+          .pipe(gulp.dest(studentDist))
+})
+gulp.task('watch-student', function() {
+	//gulp.watch是gulp提供的一个文件监视函数，详细参考gulp文档说明
+  gulp.watch('client/less/**/*.less', ['clean','student-less']);
+  gulp.watch('client/js/**/*.js', ['clean','student-js']);
+  gulp.watch('client/template/**/*.ftl', ['student-ftl']);
+  gulp.watch('client/**/*', ['moveNotLessStudent']);
+});
+
+//当然也可以用这种形式，一般来说这种形式是用来集合前面定义的任务
+gulp.task('student', ['student-ftl', 'student-js', 'student-less', 'watch-student', 'moveNotLessStudent']);
+//student-end
+
+
+//定义好上面这些任务之后，别忘了在最上面require的那些变量，这些都是需要使用npm安装的模块，因此每个都需要npm install 一遍
+//例如上面的例子，则需要在当前目录下安装 npm install gulp-less
+
+//安装完这些插件之后，每个对应的gulp.task定义的任务都可以在命令行跑起来，如命令行输入，gulp student，
+则会执行gulpfile.js中定义的最后面的一个任务，而他的启动又会依赖后面所定义的['student-ftl', 'student-js', 'student-less', 'watch-student', 'moveNotLessStudent'],从而就会启动这些任务。
+
+于是当watch-student任务监视的文件发生变换时，就会立即执行相关任务，也就达到了实时修改实时保存。
+当然，你也可以在npm（https://www.npmjs.com）上查找更多相关的插件，或者依据gulp的文档自己编写插件，实现更加复杂的任务流
